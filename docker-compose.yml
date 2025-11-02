@@ -15,7 +15,7 @@ services:
 
   java-backend:
     build:
-      context: ./java-backend
+      context: ./maven-archetype-webapp
       dockerfile: Dockerfile
     ports:
       - "9090:8080"
