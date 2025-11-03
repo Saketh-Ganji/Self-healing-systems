@@ -36,7 +36,7 @@ pipeline {
         stage('Build React Frontend') {
             steps {
                 dir('frontend') {
-                    bat 'npm install'
+                    bat 'npm install --legacy-peer-deps'
                     bat 'npm run build'
                 }
             }
@@ -44,9 +44,13 @@ pipeline {
 
         stage('Docker Build & Push') {
             steps {
-                echo 'Building and pushing Docker images...'
-                bat 'docker-compose build'
-                bat 'docker-compose push'
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        bat "echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin"
+                        bat 'docker-compose build'
+                        bat 'docker-compose push'
+                    }
+                }
             }
         }
     }

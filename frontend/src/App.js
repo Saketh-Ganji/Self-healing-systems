@@ -19,7 +19,7 @@ export default function App() {
 
   // Fetch all users
   const fetchUsers = () => {
-    axios.get('http://localhost:3000/users')
+    axios.get('http://localhost:5000/api/users')
       .then(res => setUsers(res.data))
       .catch(err => console.error(err));
   };
@@ -27,7 +27,7 @@ export default function App() {
   // Add new user
   const handleAddUser = () => {
     if (!newUser.name || !newUser.email) return alert("Enter all fields");
-    axios.post('http://localhost:3000/add-user', newUser)
+    axios.post('http://localhost:5000/api/users', newUser)
       .then(() => {
         fetchUsers();
         setNewUser({ name: '', email: '' });
@@ -38,7 +38,8 @@ export default function App() {
 
   // Delete user
   const handleDeleteUser = (id) => {
-    axios.delete(`http://localhost:3000/delete-user/${id}`)
+    axios.delete(`http://localhost:5000/api/users/${id}`)
+
       .then(() => {
         fetchUsers();
         alert("🗑️ User deleted!");
@@ -54,7 +55,8 @@ export default function App() {
 
   // Save edited user
   const handleUpdateUser = () => {
-    axios.put(`http://localhost:3000/update-user/${editingUser}`, editData)
+    axios.put(`http://localhost:5000/api/users/${editingUser}`, editData)
+
       .then(() => {
         fetchUsers();
         setEditingUser(null);

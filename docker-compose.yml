@@ -1,21 +1,73 @@
+version: '3.8'
+
 services:
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+  mysql:
+    image: mysql:8.0
+    container_name: devops-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: Saki@1704
+      MYSQL_DATABASE: self_healing_db
     ports:
-      - "3000:80"
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
 
   node-backend:
     build:
       context: ./node-backend
       dockerfile: Dockerfile
+    image: sakethganji/node-backend:latest
+    container_name: devops-node
     ports:
       - "5000:5000"
+    depends_on:
+      - mysql
+    restart: on-failure
+    environment:
+      DB_HOST: mysql
+      DB_USER: root
+      DB_PASSWORD: Saki@1704
+      DB_NAME: self_healing_db
+    command: >
+      sh -c "echo '⏳ Waiting for MySQL to be ready...' &&
+             sleep 10 &&
+             node server.js"
 
   java-backend:
     build:
       context: ./maven-archetype-webapp
       dockerfile: Dockerfile
+    image: sakethganji/java-backend:latest
+    container_name: devops-java
     ports:
-      - "9090:8080"
+      - "9191:8080"
+
+    frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: devops-frontend
+    ports:
+      - "3001:80"
+    depends_on:
+      - node-backend
+      - java-backend
+
+
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: devops-jenkins
+    user: root
+    restart: always
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - ./jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./:/workspace
+
+volumes:
+  mysql_data:
+  jenkins_home:

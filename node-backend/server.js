@@ -1,139 +1,66 @@
-// Import required modules
-const express = require('express');
-const mysql = require('mysql2');
-const app = express();
-const port = 3000;
+const express = require("express");
 const cors = require("cors");
-app.use(cors());
+const mysql = require("mysql2");
+const dotenv = require("dotenv");
 
-// Middleware to handle JSON data
+dotenv.config();
+
+const app = express();
+app.use(cors());
 app.use(express.json());
 
-// MySQL Connection Setup
+// Database connection
 const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: 'Saki@1704',  // add your MySQL password if set
-    database: 'self_healing_db' // replace with actual DB name
+  host: process.env.DB_HOST || "devops-mysql",
+  user: process.env.DB_USER || "root",
+  password: process.env.DB_PASSWORD || "root",
+  database: process.env.DB_NAME || "usersdb",
+  port: process.env.DB_PORT || 3306,
 });
 
-// Connect to the database
 db.connect((err) => {
-    if (err) {
-        console.log("❌ Database Connection Failed!", err);
-    } else {
-        console.log("✅ Database Connected Successfully!");
-    }
-});
-
-// Default Route (Check API is working)
-app.get('/', (req, res) => {
-    res.send('Hello from Express API!');
-});
-
-// Example API to get data from a table
-app.get('/users', (req, res) => {
-    db.query("SELECT * FROM users", (err, results) => {
-        if (err) {
-            res.status(500).send(err);
-        } else {
-            res.json(results);
-        }
-    });
-});
-
-// POST API to insert a user into the database
-app.post('/add-user', (req, res) => {
-    const { name, email } = req.body;
-
-    if (!name || !email) {
-        return res.status(400).json({ message: "Name and Email are required!" });
-    }
-
-    const sql = "INSERT INTO users (name, email) VALUES (?, ?)";
-    db.query(sql, [name, email], (err, result) => {
-        if (err) {
-            console.error(err);
-            res.status(500).json({ message: "Database insert failed!" });
-        } else {
-            res.status(201).json({ message: "User added successfully!", id: result.insertId });
-        }
-    });
-});
-// Add this below the existing routes
-
-// ✅ POST API to add user
-app.post("/add-user", (req, res) => {
-  const { name, email } = req.body;
-
-  if (!name || !email) {
-    return res.status(400).json({ message: "Name and Email are required" });
+  if (err) {
+    console.log("❌ Database Connection Failed!", err);
+  } else {
+    console.log("✅ Database Connected Successfully!");
   }
+});
 
-  const query = "INSERT INTO users (name, email) VALUES (?, ?)";
-  db.query(query, [name, email], (err, result) => {
-    if (err) {
-      console.error("Error inserting user:", err);
-      res.status(500).json({ error: "Database error" });
-    } else {
-      res.status(200).json({ message: "✅ User added successfully!" });
-    }
+// --- Routes ---
+app.get("/api/users", (req, res) => {
+  db.query("SELECT * FROM users", (err, results) => {
+    if (err) return res.status(500).send(err);
+    res.json(results);
   });
 });
-// UPDATE user by ID
-app.put('/users/:id', (req, res) => {
+
+app.post("/api/users", (req, res) => {
+  const { name, email } = req.body;
+  db.query("INSERT INTO users (name, email) VALUES (?, ?)", [name, email], (err, result) => {
+    if (err) return res.status(500).send(err);
+    res.json({ id: result.insertId, name, email });
+  });
+});
+
+app.put("/api/users/:id", (req, res) => {
   const { id } = req.params;
   const { name, email } = req.body;
-  const sql = 'UPDATE users SET name = ?, email = ? WHERE id = ?';
-  db.query(sql, [name, email, id], (err, result) => {
-    if (err) {
-      console.error('❌ Error updating user:', err);
-      return res.status(500).json({ error: 'Database error' });
-    }
-    console.log(`✅ User ${id} updated`);
-    res.json({ message: 'User updated successfully' });
+  db.query("UPDATE users SET name=?, email=? WHERE id=?", [name, email, id], (err) => {
+    if (err) return res.status(500).send(err);
+    res.json({ id, name, email });
   });
 });
 
-
-// 🗑 DELETE USER BY ID
-app.delete("/delete-user/:id", (req, res) => {
-  const userId = req.params.id;
-  const sql = "DELETE FROM users WHERE id = ?";
-
-  db.query(sql, [userId], (err, result) => {
-    if (err) {
-      console.error("Error deleting user:", err);
-      res.status(500).send("Error deleting user");
-    } else {
-      res.send("User deleted successfully");
-    }
+app.delete("/api/users/:id", (req, res) => {
+  const { id } = req.params;
+  db.query("DELETE FROM users WHERE id=?", [id], (err) => {
+    if (err) return res.status(500).send(err);
+    res.sendStatus(200);
   });
 });
-// Update existing user
-app.put('/update-user/:id', (req, res) => {
-  const userId = req.params.id;
-  const { name, email } = req.body;
 
-  if (!name || !email) {
-    return res.status(400).json({ error: 'Name and Email are required' });
-  }
-
-  db.query(
-    'UPDATE users SET name = ?, email = ? WHERE id = ?',
-    [name, email, userId],
-    (err, result) => {
-      if (err) {
-        console.error('Error updating user:', err);
-        res.status(500).json({ error: 'Database error' });
-      } else {
-        res.json({ message: 'User updated successfully' });
-      }
-    }
-  );
-});
-
-// Start the server
-app.listen(port, () => {
-    console.log(`✅ Server is running at http://localhost:${port}`);
+// --- Start server ---
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`✅ Server is running at http://localhost:${PORT}`);
 });
