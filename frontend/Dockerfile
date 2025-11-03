@@ -1,19 +1,12 @@
-# ---------- Step 1: Build React App ----------
-FROM node:18 AS build
-
+# ---------- Step 1: Build React app ----------
+FROM node:18-alpine AS build
 WORKDIR /app
-
-# Copy package files first for caching
 COPY package*.json ./
-
-# Install dependencies (includes react-scripts)
-RUN npm install --legacy-peer-deps
-
-# Copy the rest of the app
+# Install all dependencies including devDependencies
+RUN npm install --include=dev --legacy-peer-deps
 COPY . .
+RUN npx react-scripts build
 
-# Build React app
-RUN npm run build
 
 # ---------- Step 2: Serve with Nginx ----------
 FROM nginx:alpine
