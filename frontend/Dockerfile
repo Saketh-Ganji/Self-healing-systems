@@ -1,27 +1,27 @@
 # ---------- Step 1: Build React App ----------
-FROM node:18-alpine AS build
+FROM node:18 AS build
 
 WORKDIR /app
 
-# Copy package files
+# Copy dependency files
 COPY package*.json ./
 
-# Install all dependencies including devDependencies
+# Install dependencies (include devDeps)
 RUN npm install --include=dev --legacy-peer-deps
 
-# Force ensure react-scripts exists
-RUN npx react-scripts --version || npm install react-scripts@5.0.1 --save-dev --legacy-peer-deps
+# Explicitly install react-scripts globally to avoid path issues
+RUN npm install -g react-scripts@5.0.1
 
-# Copy all app source files
+# Copy source files
 COPY . .
 
-# Build the React app
-RUN npx react-scripts build
+# Build React app
+RUN npm run build
 
 # ---------- Step 2: Serve React App using Nginx ----------
 FROM nginx:alpine
 
-# Copy build files to Nginx HTML directory
+# Copy build output to Nginx's default static directory
 COPY --from=build /app/build /usr/share/nginx/html
 
 EXPOSE 80
