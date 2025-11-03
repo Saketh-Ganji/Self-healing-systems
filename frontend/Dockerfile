@@ -6,22 +6,22 @@ WORKDIR /app
 # Copy dependency files
 COPY package*.json ./
 
-# Install dependencies with devDeps
+# Always install ALL deps including devDependencies
 RUN npm install --include=dev --legacy-peer-deps
 
-# Disable ESLint during build (avoids CRA plugin conflicts)
+# Disable ESLint plugin to avoid build-time conflicts
 ENV DISABLE_ESLINT_PLUGIN=true
 
-# Copy all source files
+# Copy all source code
 COPY . .
 
-# Build React app
-RUN npm run build
+# Ensure react-scripts is available
+RUN npx react-scripts build
 
-# ---------- Step 2: Serve React App using Nginx ----------
+# ---------- Step 2: Serve React App with Nginx ----------
 FROM nginx:alpine
 
-# Copy React build output to Nginx's html directory
+# Copy build output from previous stage
 COPY --from=build /app/build /usr/share/nginx/html
 
 EXPOSE 80
