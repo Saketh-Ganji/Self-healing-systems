@@ -1,28 +1,26 @@
-# Step 1: Build React app
-FROM node:18 AS build
+# ---------- Step 1: Build React App ----------
+FROM node:18-alpine AS build
 
 WORKDIR /app
 
-# Copy only package files first (to leverage Docker cache)
+# Copy package.json files first
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# Force install react-scripts explicitly to guarantee availability
+RUN npm install react-scripts@5.0.1 --save-dev --legacy-peer-deps
+RUN npm install --legacy-peer-deps
 
-# Copy rest of the source code
+# Copy all source files
 COPY . .
 
 # Build the app
-RUN npx react-scripts build
+RUN npm run build
 
-# Step 2: Serve the built app using Nginx
+# ---------- Step 2: Serve React App using Nginx ----------
 FROM nginx:alpine
 
-# Copy build output from previous stage
+# Copy the React build from previous step
 COPY --from=build /app/build /usr/share/nginx/html
 
-# Expose default port
 EXPOSE 80
-
-# Start Nginx
 CMD ["nginx", "-g", "daemon off;"]
