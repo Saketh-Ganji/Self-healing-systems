@@ -42,18 +42,20 @@ services:
     container_name: devops-java
     ports:
       - "9191:8080"
+    depends_on:
+      - mysql
 
-    frontend:
+  frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    image: sakethganji/frontend:latest
     container_name: devops-frontend
     ports:
       - "3001:80"
     depends_on:
       - node-backend
       - java-backend
-
 
   jenkins:
     image: jenkins/jenkins:lts
