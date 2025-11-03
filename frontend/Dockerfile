@@ -6,13 +6,13 @@ WORKDIR /app
 # Copy dependency files
 COPY package*.json ./
 
-# Install dependencies (include devDeps)
+# Install dependencies with devDeps
 RUN npm install --include=dev --legacy-peer-deps
 
-# Explicitly install react-scripts globally to avoid path issues
-RUN npm install -g react-scripts@5.0.1
+# Disable ESLint during build (avoids CRA plugin conflicts)
+ENV DISABLE_ESLINT_PLUGIN=true
 
-# Copy source files
+# Copy all source files
 COPY . .
 
 # Build React app
@@ -21,7 +21,7 @@ RUN npm run build
 # ---------- Step 2: Serve React App using Nginx ----------
 FROM nginx:alpine
 
-# Copy build output to Nginx's default static directory
+# Copy React build output to Nginx's html directory
 COPY --from=build /app/build /usr/share/nginx/html
 
 EXPOSE 80
